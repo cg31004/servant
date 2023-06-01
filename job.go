@@ -8,13 +8,14 @@ type Job interface {
 	Run()
 }
 
-type FuncJob func()
+type FuncJob func(ctx *CronContext)
 
 func (f FuncJob) Run() {
-	f()
+	ctx := &CronContext{}
+	f(ctx)
 }
 
-func NewCustomJobFunc(c *Cron, f func(), profile *Profile) *CustomJob {
+func NewCustomJobFunc(c *Cron, f func(ctx *CronContext), profile *Profile) *CustomJob {
 	return NewCustomJob(c, FuncJob(f), profile)
 }
 

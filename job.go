@@ -23,14 +23,15 @@ func NewCustomJobFunc(c *Cron, f func(ctx *Context), profile *Profile) *CustomJo
 func NewCustomJob(c *Cron, job Job, f func(ctx *Context), profile *Profile) *CustomJob {
 	handlers := append(c.handlers, f)
 	return &CustomJob{
-		job:     job,
-		profile: profile,
-		wg:      c.wg,
-		mx:      c.mx,
-		ctx: &Context{
-			Context:      context.Background(),
-			handlerChain: handlers,
-		},
+		job:      job,
+		profile:  profile,
+		wg:       c.wg,
+		mx:       c.mx,
+		handlers: handlers,
+		//ctx: &Context{
+		//	Context:      context.Background(),
+		//	handlerChain: handlers,
+		//},
 	}
 }
 
@@ -40,18 +41,17 @@ type CustomJob struct {
 	handlers HandlersChain
 	mx       *sync.Mutex
 	wg       *sync.WaitGroup
-	ctx      *Context
 }
 
 func (cj *CustomJob) Run() {
 	if !cj.canRun() {
 		return
 	}
-
 	defer cj.finish()
 
+	ctx := &Context{Context: context.Background(), handlerChain: cj.handlers}
 	cj.wg.Add(1)
-	cj.ctx.Next()
+	ctx.Next()
 	//cj.job.Run()
 	cj.wg.Done()
 }

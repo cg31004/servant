@@ -3,7 +3,7 @@ package servant
 import (
 	"sync"
 
-	"github.com/robfig/cron"
+	"github.com/robfig/cron/v3"
 )
 
 func New() *Cron {
@@ -35,7 +35,7 @@ func (c *Cron) AddJob(spec string, cmd Job, opt ...FuncCronOpt) (*Profile, error
 }
 
 func (c *Cron) addJob(spec string, job *CustomJob) (*Profile, error) {
-	entryID, err := c.pkgCron.AddJob(spec, cron.NewChain(cron.SkipIfStillRunning(cron.DefaultLogger), cron.Recover(cron.DefaultLogger)).Then(job))
+	entryID, err := c.pkgCron.AddJob(spec, cron.NewChain(cron.Recover(cron.DefaultLogger)).Then(job))
 	if err != nil {
 		return nil, newCronError(ErrRegistered, ErrorWithErrorMessage(err))
 	}
@@ -61,7 +61,7 @@ func (c *Cron) addScheduleJob(schedule Schedule, job *CustomJob) (*Profile, erro
 	if schedule == nil {
 		return nil, newCronError(ErrScheduleIsNil)
 	}
-	entryID := c.pkgCron.Schedule(schedule, cron.NewChain(cron.SkipIfStillRunning(cron.DefaultLogger), cron.Recover(cron.DefaultLogger)).Then(job))
+	entryID := c.pkgCron.Schedule(schedule, cron.NewChain(cron.Recover(cron.DefaultLogger)).Then(job))
 	job.profile.setEntryID(entryID)
 	return job.profile, nil
 }

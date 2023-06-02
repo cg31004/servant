@@ -70,5 +70,5 @@ func (c *CronContext) Value(key interface{}) interface{} {
 		val, _ := c.Get(keyAsString)
 		return val
 	}
-	return nil
+	return c.Context.Value(key)
 }

@@ -3,7 +3,7 @@ package servant
 import (
 	"time"
 
-	"github.com/robfig/cron"
+	"github.com/robfig/cron/v3"
 )
 
 type Schedule = cron.Schedule

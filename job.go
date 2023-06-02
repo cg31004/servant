@@ -1,6 +1,7 @@
 package servant
 
 import (
+	"context"
 	"sync"
 )
 
@@ -11,7 +12,7 @@ type Job interface {
 type FuncJob func(ctx *CronContext)
 
 func (f FuncJob) Run() {
-	ctx := &CronContext{}
+	ctx := &CronContext{Context: context.Background()}
 	f(ctx)
 }
 

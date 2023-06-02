@@ -15,15 +15,16 @@ func New() *Cron {
 }
 
 type Cron struct {
-	pkgCron *cron.Cron
-	Opt     CronOpt
-	mx      *sync.Mutex
-	wg      *sync.WaitGroup
-	running bool
+	pkgCron  *cron.Cron
+	Opt      CronOpt
+	mx       *sync.Mutex
+	wg       *sync.WaitGroup
+	running  bool
+	handlers HandlersChain
 }
 
 // AddFunc 將Func 加入排程器，並依據字串規則執行任務。
-func (c *Cron) AddFunc(spec string, cmd func(ctx *CronContext), opt ...FuncCronOpt) (*Profile, error) {
+func (c *Cron) AddFunc(spec string, cmd func(ctx *Context), opt ...FuncCronOpt) (*Profile, error) {
 	job := NewCustomJobFunc(c, cmd, parseCronOpt(opt...))
 	return c.addJob(spec, job)
 }
@@ -46,7 +47,7 @@ func (c *Cron) addJob(spec string, job *CustomJob) (*Profile, error) {
 }
 
 // AddScheduleFunc 將Func 加入排程器，並依據Schedule物件規則執行任務。
-func (c *Cron) AddScheduleFunc(schedule Schedule, cmd func(ctx *CronContext), opt ...FuncCronOpt) (*Profile, error) {
+func (c *Cron) AddScheduleFunc(schedule Schedule, cmd func(ctx *Context), opt ...FuncCronOpt) (*Profile, error) {
 	job := NewCustomJobFunc(c, cmd, parseCronOpt(opt...))
 	return c.addScheduleJob(schedule, job)
 }
@@ -101,4 +102,8 @@ func (c *Cron) Stop() {
 	c.mx.Unlock()
 
 	c.wg.Wait()
+}
+
+func (c *Cron) Use(middleware ...HandleFunc) {
+	c.handlers = append(c.handlers, middleware...)
 }

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type CronContext struct {
+type Context struct {
 	context.Context
 	mu           sync.RWMutex
 	param        map[string]any
@@ -14,7 +14,7 @@ type CronContext struct {
 	handlerChain HandlersChain
 }
 
-func (c *CronContext) Get(key string) (value interface{}, exists bool) {
+func (c *Context) Get(key string) (value any, exists bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	value, exists = c.param[key]
@@ -22,17 +22,17 @@ func (c *CronContext) Get(key string) (value interface{}, exists bool) {
 	return
 }
 
-func (c *CronContext) Set(key string, value interface{}) {
+func (c *Context) Set(key string, value any) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.param == nil {
-		c.param = make(map[string]interface{})
+		c.param = make(map[string]any)
 	}
 
 	c.param[key] = value
 }
 
-func (c *CronContext) Next() {
+func (c *Context) Next() {
 	c.index++
 	for c.index < len(c.handlerChain) {
 		c.handlerChain[c.index](c)
@@ -46,26 +46,26 @@ func (c *CronContext) Next() {
 
 // Deadline always returns that there is no deadline (ok==false),
 // maybe you want to use Request.Context().Deadline() instead.
-func (c *CronContext) Deadline() (deadline time.Time, ok bool) {
+func (c *Context) Deadline() (deadline time.Time, ok bool) {
 	return
 }
 
 // Done always returns nil (chan which will wait forever),
 // if you want to abort your work when the connection was closed
 // you should use Request.Context().Done() instead.
-func (c *CronContext) Done() <-chan struct{} {
+func (c *Context) Done() <-chan struct{} {
 	return nil
 }
 
 // Err always returns nil, maybe you want to use Request.Context().Err() instead.
-func (c *CronContext) Err() error {
+func (c *Context) Err() error {
 	return nil
 }
 
 // Value returns the value associated with this context for key, or nil
 // if no value is associated with key. Successive calls to Value with
 // the same key returns the same result.
-func (c *CronContext) Value(key interface{}) interface{} {
+func (c *Context) Value(key any) any {
 	if keyAsString, ok := key.(string); ok {
 		val, _ := c.Get(keyAsString)
 		return val

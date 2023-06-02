@@ -9,31 +9,38 @@ type Job interface {
 	Run()
 }
 
-type FuncJob func(ctx *CronContext)
+type FuncJob func(ctx *Context)
 
 func (f FuncJob) Run() {
-	ctx := &CronContext{Context: context.Background()}
+	ctx := &Context{Context: context.Background()}
 	f(ctx)
 }
 
-func NewCustomJobFunc(c *Cron, f func(ctx *CronContext), profile *Profile) *CustomJob {
-	return NewCustomJob(c, FuncJob(f), profile)
+func NewCustomJobFunc(c *Cron, f func(ctx *Context), profile *Profile) *CustomJob {
+	return NewCustomJob(c, FuncJob(f), f, profile)
 }
 
-func NewCustomJob(c *Cron, job Job, profile *Profile) *CustomJob {
+func NewCustomJob(c *Cron, job Job, f func(ctx *Context), profile *Profile) *CustomJob {
+	handlers := append(c.handlers, f)
 	return &CustomJob{
 		job:     job,
 		profile: profile,
 		wg:      c.wg,
 		mx:      c.mx,
+		ctx: &Context{
+			Context:      context.Background(),
+			handlerChain: handlers,
+		},
 	}
 }
 
 type CustomJob struct {
-	job     Job
-	profile *Profile
-	mx      *sync.Mutex
-	wg      *sync.WaitGroup
+	job      Job
+	profile  *Profile
+	handlers HandlersChain
+	mx       *sync.Mutex
+	wg       *sync.WaitGroup
+	ctx      *Context
 }
 
 func (cj *CustomJob) Run() {
@@ -44,7 +51,8 @@ func (cj *CustomJob) Run() {
 	defer cj.finish()
 
 	cj.wg.Add(1)
-	cj.job.Run()
+	cj.ctx.Next()
+	//cj.job.Run()
 	cj.wg.Done()
 }
 

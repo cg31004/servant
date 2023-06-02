@@ -6,7 +6,7 @@ import (
 
 var handler Handler
 
-type HandleFunc func(ctx *CronContext)
+type HandleFunc func(ctx *Context)
 type HandlersChain []HandleFunc
 
 type Handler struct {
@@ -20,7 +20,7 @@ func AdapterHandle(funcJob FuncJob, middleware ...HandleFunc) FuncJob {
 }
 func (h Handler) AdapterHandle(funcJob FuncJob, middleware ...HandleFunc) FuncJob {
 	handles := append(middleware, h.convert(funcJob)...)
-	return func(ctx *CronContext) {
+	return func(ctx *Context) {
 		handlesChain := h.chain(handles...)
 		c := &adapterContext{
 			ctx:        ctx,
@@ -35,7 +35,7 @@ func (h Handler) convert(handlers ...FuncJob) []HandleFunc {
 	length := len(handlers)
 	result := make([]HandleFunc, length)
 	for i, handler := range handlers {
-		result[i] = func(ctx *CronContext) {
+		result[i] = func(ctx *Context) {
 			handler(ctx)
 		}
 	}
@@ -59,7 +59,7 @@ type AdapterContext interface {
 }
 
 type adapterContext struct {
-	ctx        *CronContext
+	ctx        *Context
 	middleware *list.List
 }
 

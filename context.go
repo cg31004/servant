@@ -1,4 +1,4 @@
-package cronjob
+package servant
 
 import (
 	"context"
@@ -16,19 +16,20 @@ type CronContext struct {
 
 func (c *CronContext) Get(key string) (value interface{}, exists bool) {
 	c.mu.RLock()
+	defer c.mu.RUnlock()
 	value, exists = c.param[key]
-	c.mu.RUnlock()
+
 	return
 }
 
 func (c *CronContext) Set(key string, value interface{}) {
 	c.mu.Lock()
+	defer c.mu.Unlock()
 	if c.param == nil {
 		c.param = make(map[string]interface{})
 	}
 
 	c.param[key] = value
-	c.mu.Unlock()
 }
 
 func (c *CronContext) Next() {

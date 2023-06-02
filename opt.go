@@ -1,4 +1,4 @@
-package cronjob
+package servant
 
 type FuncCronOpt func(o *Profile)
 

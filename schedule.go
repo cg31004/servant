@@ -1,9 +1,9 @@
-package cronjob
+package servant
 
 import (
 	"time"
 
-	"github.com/robfig/cron/v3"
+	"github.com/robfig/cron"
 )
 
 type Schedule = cron.Schedule

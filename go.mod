@@ -1,4 +1,4 @@
-module gitlab.innotech.me/game/im/backend/common/cronjob
+module servant
 
 go 1.20
 

@@ -1,9 +1,9 @@
-package cronjob
+package servant
 
 import (
 	"sync"
 
-	"github.com/robfig/cron/v3"
+	"github.com/robfig/cron"
 )
 
 func New() *Cron {

@@ -1,4 +1,4 @@
-package cronjob
+package servant
 
 import (
 	"fmt"

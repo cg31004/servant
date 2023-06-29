@@ -20,7 +20,7 @@ type Cron struct {
 	mx       *sync.Mutex
 	wg       *sync.WaitGroup
 	running  bool
-	handlers HandlersChain
+	handlers handlerChain
 }
 
 // AddFunc 將Func 加入排程器，並依據字串規則執行任務。
@@ -104,6 +104,7 @@ func (c *Cron) Stop() {
 	c.wg.Wait()
 }
 
-func (c *Cron) Use(middleware ...HandleFunc) {
-	c.handlers = append(c.handlers, middleware...)
+// Use 可以插入中繼器。
+func (c *Cron) Use(mw ...FuncJob) {
+	c.handlers = append(c.handlers, mw...)
 }

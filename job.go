@@ -9,19 +9,7 @@ type Job interface {
 	Run()
 }
 
-type FuncJob func(ctx *Context)
-
-func (f FuncJob) Run() {
-	ctx := &Context{Context: context.Background()}
-	f(ctx)
-}
-
-func NewCustomJobFunc(c *Cron, f func(ctx *Context), profile *Profile) *CustomJob {
-	return NewCustomJob(c, FuncJob(f), f, profile)
-}
-
-func NewCustomJob(c *Cron, job Job, f func(ctx *Context), profile *Profile) *CustomJob {
-	handlers := append(c.handlers, f)
+func NewCustomJob(c *Cron, job Job, profile *Profile) *CustomJob {
 	return &CustomJob{
 		job:      job,
 		profile:  profile,
@@ -36,11 +24,11 @@ func NewCustomJob(c *Cron, job Job, f func(ctx *Context), profile *Profile) *Cus
 }
 
 type CustomJob struct {
-	job      Job
-	profile  *Profile
-	handlers HandlersChain
-	mx       *sync.Mutex
-	wg       *sync.WaitGroup
+	job          Job
+	profile      *Profile
+	mx           *sync.Mutex
+	wg           *sync.WaitGroup
+	handlerChain []handlerChain
 }
 
 func (cj *CustomJob) Run() {

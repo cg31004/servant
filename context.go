@@ -11,25 +11,30 @@ type Context struct {
 	mu           sync.RWMutex
 	param        map[string]any
 	index        int
-	handlerChain HandlersChain
+	handlerChain handlerChain
 }
 
-func (c *Context) Get(key string) (value any, exists bool) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	value, exists = c.param[key]
+func (c *Context) reset() {
+	c.index = -1
+	c.param = nil
+	c.Context = context.Background()
+}
 
+func (c *Context) Get(key string) (value interface{}, exists bool) {
+	c.mu.RLock()
+	value, exists = c.param[key]
+	defer c.mu.RUnlock()
 	return
 }
 
-func (c *Context) Set(key string, value any) {
+func (c *Context) Set(key string, value interface{}) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	if c.param == nil {
 		c.param = make(map[string]any)
 	}
 
 	c.param[key] = value
+	c.mu.Unlock()
 }
 
 func (c *Context) Next() {
@@ -67,8 +72,10 @@ func (c *Context) Err() error {
 // the same key returns the same result.
 func (c *Context) Value(key any) any {
 	if keyAsString, ok := key.(string); ok {
-		val, _ := c.Get(keyAsString)
-		return val
+		if val, exists := c.Get(keyAsString); exists {
+			return val
+		}
 	}
+
 	return c.Context.Value(key)
 }

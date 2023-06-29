@@ -1,6 +1,7 @@
-package cronjob
+package servant
 
 import (
+	"context"
 	"sync"
 )
 
@@ -8,41 +9,38 @@ type Job interface {
 	Run()
 }
 
-type FuncJob func()
-
-func (f FuncJob) Run() {
-	f()
-}
-
-func NewCustomJobFunc(c *Cron, f func(), profile *Profile) *CustomJob {
-	return NewCustomJob(c, FuncJob(f), profile)
-}
-
 func NewCustomJob(c *Cron, job Job, profile *Profile) *CustomJob {
 	return &CustomJob{
-		job:     job,
-		profile: profile,
-		wg:      c.wg,
-		mx:      c.mx,
+		job:      job,
+		profile:  profile,
+		wg:       c.wg,
+		mx:       c.mx,
+		handlers: handlers,
+		//ctx: &Context{
+		//	Context:      context.Background(),
+		//	handlerChain: handlers,
+		//},
 	}
 }
 
 type CustomJob struct {
-	job     Job
-	profile *Profile
-	mx      *sync.Mutex
-	wg      *sync.WaitGroup
+	job          Job
+	profile      *Profile
+	mx           *sync.Mutex
+	wg           *sync.WaitGroup
+	handlerChain []handlerChain
 }
 
 func (cj *CustomJob) Run() {
 	if !cj.canRun() {
 		return
 	}
-
 	defer cj.finish()
 
+	ctx := &Context{Context: context.Background(), handlerChain: cj.handlers}
 	cj.wg.Add(1)
-	cj.job.Run()
+	ctx.Next()
+	//cj.job.Run()
 	cj.wg.Done()
 }
 

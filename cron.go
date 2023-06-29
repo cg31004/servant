@@ -1,4 +1,4 @@
-package cronjob
+package servant
 
 import (
 	"sync"
@@ -15,15 +15,16 @@ func New() *Cron {
 }
 
 type Cron struct {
-	pkgCron *cron.Cron
-	Opt     CronOpt
-	mx      *sync.Mutex
-	wg      *sync.WaitGroup
-	running bool
+	pkgCron  *cron.Cron
+	Opt      CronOpt
+	mx       *sync.Mutex
+	wg       *sync.WaitGroup
+	running  bool
+	handlers handlerChain
 }
 
 // AddFunc 將Func 加入排程器，並依據字串規則執行任務。
-func (c *Cron) AddFunc(spec string, cmd func(), opt ...FuncCronOpt) (*Profile, error) {
+func (c *Cron) AddFunc(spec string, cmd func(ctx *Context), opt ...FuncCronOpt) (*Profile, error) {
 	job := NewCustomJobFunc(c, cmd, parseCronOpt(opt...))
 	return c.addJob(spec, job)
 }
@@ -35,7 +36,7 @@ func (c *Cron) AddJob(spec string, cmd Job, opt ...FuncCronOpt) (*Profile, error
 }
 
 func (c *Cron) addJob(spec string, job *CustomJob) (*Profile, error) {
-	entryID, err := c.pkgCron.AddJob(spec, cron.NewChain(cron.SkipIfStillRunning(cron.DefaultLogger), cron.Recover(cron.DefaultLogger)).Then(job))
+	entryID, err := c.pkgCron.AddJob(spec, cron.NewChain(cron.Recover(cron.DefaultLogger)).Then(job))
 	if err != nil {
 		return nil, newCronError(ErrRegistered, ErrorWithErrorMessage(err))
 	}
@@ -46,7 +47,7 @@ func (c *Cron) addJob(spec string, job *CustomJob) (*Profile, error) {
 }
 
 // AddScheduleFunc 將Func 加入排程器，並依據Schedule物件規則執行任務。
-func (c *Cron) AddScheduleFunc(schedule Schedule, cmd func(), opt ...FuncCronOpt) (*Profile, error) {
+func (c *Cron) AddScheduleFunc(schedule Schedule, cmd func(ctx *Context), opt ...FuncCronOpt) (*Profile, error) {
 	job := NewCustomJobFunc(c, cmd, parseCronOpt(opt...))
 	return c.addScheduleJob(schedule, job)
 }
@@ -61,7 +62,7 @@ func (c *Cron) addScheduleJob(schedule Schedule, job *CustomJob) (*Profile, erro
 	if schedule == nil {
 		return nil, newCronError(ErrScheduleIsNil)
 	}
-	entryID := c.pkgCron.Schedule(schedule, cron.NewChain(cron.SkipIfStillRunning(cron.DefaultLogger), cron.Recover(cron.DefaultLogger)).Then(job))
+	entryID := c.pkgCron.Schedule(schedule, cron.NewChain(cron.Recover(cron.DefaultLogger)).Then(job))
 	job.profile.setEntryID(entryID)
 	return job.profile, nil
 }
@@ -101,4 +102,9 @@ func (c *Cron) Stop() {
 	c.mx.Unlock()
 
 	c.wg.Wait()
+}
+
+// Use 可以插入中繼器。
+func (c *Cron) Use(mw ...FuncJob) {
+	c.handlers = append(c.handlers, mw...)
 }
